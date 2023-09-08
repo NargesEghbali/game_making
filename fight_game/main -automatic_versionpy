@@ -1,0 +1,143 @@
+import pygame 
+pygame.font.init()
+pygame.mixer.init()
+import math
+import numpy as np
+screen=pygame.display.set_mode((800,400))
+pygame.display.set_caption('جنگ اژدها ')
+programIcon = pygame.image.load('icon.ico')
+pygame.display.set_icon(programIcon)
+
+back=pygame.transform.scale(pygame.image.load('back2.jpg'),(800,400))
+p1=pygame.transform.scale(pygame.image.load('1.png'),(100,150))
+p2=pygame.transform.scale(pygame.image.load('2.png'),(100,150))
+speed=2
+speed_2=1
+speed_bullet=3
+
+shoot_p1=pygame.mixer.Sound('1.wav')
+shoot_p2=pygame.mixer.Sound('2.wav')
+
+scream_p1=pygame.mixer.Sound('s1.wav')
+scream_p2=pygame.mixer.Sound('s2.wav')
+
+end_game=pygame.mixer.Sound('end_game.mp3')
+
+
+auto_step=1
+directions=['right','left','up','down']
+selected_dir=np.random.choice(directions)
+#################################################
+def draw_screen(p1_loc,p2_loc,p1_bullets,p2_bullets):
+    # screen.fill((253,0,127))
+    screen.blit(back,(0,0))
+    screen.blit(p1,(p1_loc.x,p1_loc.y))
+    screen.blit(p2,(p2_loc.x,p2_loc.y))
+    pygame.draw.line(screen,'red2',(400,0),(400,400),10)
+    for bullet in p1_bullets:
+        pygame.draw.rect(screen,'cyan',bullet)
+    for bullet in p2_bullets:
+        pygame.draw.rect(screen,'darkolivegreen2',bullet)
+    font_score=pygame.font.SysFont('comic sans sm',24)
+    p1_score=font_score.render('P1 Score:'+str(p1_heart),1,(255,255,255))
+    screen.blit(p1_score,(600,30))
+
+    p2_score=font_score.render('P2 Score:'+str(p2_heart),1,(255,255,255))
+    screen.blit(p2_score,(150,30))
+    pygame.display.update()
+def p1_movement(pressed_keys,p1_loc):
+    if pressed_keys[pygame.K_UP] and p1_loc.y>0:
+        p1_loc.y=p1_loc.y-speed
+    if pressed_keys[pygame.K_DOWN] and p1_loc.y<250:
+        p1_loc.y=p1_loc.y+speed
+    if pressed_keys[pygame.K_RIGHT] and p1_loc.x<700:
+        p1_loc.x=p1_loc.x+speed
+    if pressed_keys[pygame.K_LEFT]and p1_loc.x>400:
+        p1_loc.x=p1_loc.x-speed
+
+def p2_movement(p2_loc):
+    global auto_step,selected_dir
+    if auto_step<8:
+        if selected_dir=='up':
+            p2_loc.y=p2_loc.y-speed_2
+        if selected_dir=='down':
+            p2_loc.y=p2_loc.y+speed_2
+        if selected_dir=='right':
+            p2_loc.x=p2_loc.x+speed_2
+        if selected_dir=='down':
+            p2_loc.x=p2_loc.x-speed_2
+        auto_step=auto_step+1
+
+    else:
+        auto_step=0
+        directions=['right','left','up','down']
+        selected_dir=np.random.choice(directions)
+
+
+ 
+
+def bullet_movement(p1_bullets,p2_bullets,p1_loc,p2_loc):
+    global p1_heart,p2_heart
+    for bullet in p1_bullets:
+        bullet.x=bullet.x-speed_bullet
+        if p2_loc.colliderect(bullet):
+            scream_p2.play()
+            p2_heart=p2_heart-1
+            p1_bullets.remove(bullet)
+    for bullet in p2_bullets:
+        bullet.x=bullet.x+speed_bullet
+        if p1_loc.colliderect(bullet):
+            scream_p1.play()
+            p1_heart=p1_heart-1
+            p2_bullets.remove(bullet)
+def draw_winner(txt):
+    font_winner=pygame.font.SysFont('comic sans sm',54)
+    text_winner=font_winner.render(txt,1,(255,0,0))
+    screen.blit(text_winner,(300,150))
+    end_game.play()
+    pygame.display.update()
+    pygame.time.delay(7000)
+
+#################################################
+
+def main():
+    global p1_heart,p2_heart
+    p1_heart=10
+    p2_heart=10
+    p1_loc=pygame.Rect(600,200,100,150)
+    p2_loc=pygame.Rect(100,200,100,150)
+    run=True
+    p1_bullets=[]
+    p2_bullets=[]
+    while run:
+        for event in pygame.event.get():
+            if event.type==pygame.QUIT:
+                run=False
+            if event.type==pygame.KEYDOWN:
+                if event.key==pygame.K_k:
+                    shoot_p1.play()
+                    bullet=pygame.Rect( p1_loc.x+20, p1_loc.y+30,10,10)
+                    p1_bullets.append(bullet)
+                if event.key==pygame.K_f:
+                    shoot_p2.play()
+                    bullet=pygame.Rect( p2_loc.x, p2_loc.y,20,10)
+                    p2_bullets.append(bullet)
+        if p1_heart==0:
+            text='p2 win!!!'
+            draw_winner(text)
+            break
+        
+        if p2_heart==0:
+            text='p1 win!!!'
+            draw_winner(text)
+            break
+
+        bullet_movement(p1_bullets,p2_bullets,p1_loc,p2_loc)
+        pressed_keys=pygame.key.get_pressed()
+        p1_movement(pressed_keys,p1_loc)
+        p2_movement(p2_loc)
+        draw_screen(p1_loc,p2_loc,p1_bullets,p2_bullets)
+    pygame.quit()    
+
+#######################################################
+main()
